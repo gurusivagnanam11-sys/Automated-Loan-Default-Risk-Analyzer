@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Risk Assessment Result — Loan Analyzer</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0a0c10;
+      --surface:  #111318;
+      --card:     #161a22;
+      --border:   #232838;
+      --accent:   #00e5ff;
+      --text:     #e8eaf0;
+      --muted:    #7b8299;
+      --green:    #00e676;
+      --red:      #ff1744;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      padding: 0 0 60px;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 48px 24px 28px;
+      border-bottom: 1px solid var(--border);
+      position: relative; z-index: 1;
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: var(--accent);
+      border: 1px solid rgba(0,229,255,.35);
+      padding: 5px 14px;
+      border-radius: 40px;
+      margin-bottom: 16px;
+    }
+
+    h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+
+    /* ── Main ── */
+    main {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+      position: relative; z-index: 1;
+    }
+
+    /* ── Verdict card ── */
+    .verdict-card {
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 24px;
+      border: 2px solid transparent;
+      animation: fadeUp .5s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .verdict-card.high-risk {
+      border-color: var(--red);
+      background: radial-gradient(ellipse at top, rgba(255,23,68,.10) 0%, var(--card) 60%);
+    }
+    .verdict-card.low-risk {
+      border-color: var(--green);
+      background: radial-gradient(ellipse at top, rgba(0,230,118,.10) 0%, var(--card) 60%);
+    }
+
+    .verdict-inner {
+      padding: 40px 36px;
+      text-align: center;
+    }
+
+    .verdict-icon {
+      font-size: 64px;
+      line-height: 1;
+      margin-bottom: 16px;
+      animation: pop .4s cubic-bezier(.175,.885,.32,1.275) .3s both;
+    }
+
+    @keyframes pop {
+      from { transform: scale(0.4); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    .verdict-title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    .high-risk .verdict-title { color: var(--red); }
+    .low-risk  .verdict-title { color: var(--green); }
+
+    .verdict-sub {
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    /* ── Probability meter ── */
+    .prob-section { margin-top: 12px; }
+
+    .prob-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .prob-bar-bg {
+      background: rgba(255,255,255,.06);
+      border-radius: 40px;
+      height: 10px;
+      overflow: hidden;
+      width: 100%;
+      max-width: 420px;
+      margin: 0 auto 10px;
+    }
+
+    .prob-bar-fill {
+      height: 100%;
+      border-radius: 40px;
+      transition: width 1s cubic-bezier(.4,0,.2,1) .6s;
+      width: 0%;  /* animated via JS */
+    }
+
+    .high-risk .prob-bar-fill { background: var(--red); }
+    .low-risk  .prob-bar-fill { background: var(--green); }
+
+    .prob-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .high-risk .prob-value { color: var(--red); }
+    .low-risk  .prob-value { color: var(--green); }
+
+    /* ── Details grid ── */
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 24px;
+      animation: fadeUp .5s ease .15s both;
+    }
+
+    .detail-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+
+    .detail-card .dc-label {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .detail-card .dc-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ── Actions ── */
+    .actions {
+      display: flex;
+      gap: 12px;
+      animation: fadeUp .5s ease .25s both;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      border: none;
+    }
+
+    .btn-primary:hover { box-shadow: 0 8px 24px rgba(0,229,255,.3); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-secondary:hover { border-color: var(--text); }
+
+    /* ── Insight box ── */
+    .insight-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      animation: fadeUp .5s ease .1s both;
+    }
+
+    .insight-box strong { color: var(--text); }
+
+    footer {
+      text-align: center;
+      padding-top: 48px;
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      position: relative; z-index: 1;
+    }
+
+    @media (max-width: 540px) {
+      .details-grid { grid-template-columns: 1fr; }
+      .verdict-title { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge">Assessment Complete</div>
+    <h1>Risk Assessment Report</h1>
+  </header>
+
+  <main>
+
+    {% set is_high = label == 1 %}
+    {% set pct = (probability * 100) | round(1) if probability is number else 0 %}
+
+    <!-- ── Verdict ── -->
+    <div class="verdict-card {{ 'high-risk' if is_high else 'low-risk' }}">
+      <div class="verdict-inner">
+        <div class="verdict-icon">{{ '⚠️' if is_high else '✅' }}</div>
+        <div class="verdict-title">{{ 'HIGH RISK' if is_high else 'LOW RISK' }}</div>
+        <div class="verdict-sub">
+          {{ 'This borrower is likely to default on the loan.' if is_high else 'This borrower is likely to fully repay the loan.' }}
+        </div>
+
+        <div class="prob-section">
+          <div class="prob-label">Default Probability</div>
+          <div class="prob-bar-bg">
+            <div class="prob-bar-fill" id="probBar" style="width:0%"></div>
+          </div>
+          <div class="prob-value" id="probValue">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Insight ── -->
+    <div class="insight-box">
+      {% if is_high %}
+        <strong>Analyst Note:</strong> Multiple risk indicators suggest elevated default probability.
+        Key factors may include high interest rate, elevated DTI ratio, or low FICO score.
+        Consider requesting additional collateral or co-signer before approving.
+      {% else %}
+        <strong>Analyst Note:</strong> Borrower profile indicates stable repayment capacity.
+        Credit score, income, and utilization metrics are within acceptable risk thresholds.
+        Standard loan processing procedures apply.
+      {% endif %}
+    </div>
+
+    <!-- ── Borrower Summary ── -->
+    <div class="details-grid">
+      <div class="detail-card">
+        <div class="dc-label">Loan Amount</div>
+        <div class="dc-value">${{ "{:,.0f}".format(borrower.loan_amnt) }}</div>
+      </div>
+      <div class="detail-card">
+        <div class="dc-label">Interest Rate</div>
+        <div class="dc-value">{{ borrower.int_rate }}%</div>
+      </div>
+      <div class="detail-card">
+        <div class="dc-label">Annual Income</div>
+        <div class="dc-value">${{ "{:,.0f}".format(borrower.annual_inc) }}</div>
+      </div>
+      <div class="detail-card">
+        <div class="dc-label">FICO Score</div>
+        <div class="dc-value">{{ borrower.fico_score }}</div>
+      </div>
+      <div class="detail-card">
+        <div class="dc-label">DTI Ratio</div>
+        <div class="dc-value">{{ borrower.dti }}%</div>
+      </div>
+      <div class="detail-card">
+        <div class="dc-label">Term</div>
+        <div class="dc-value">{{ borrower.term.strip() }}</div>
+      </div>
+    </div>
+
+    <!-- ── Actions ── -->
+    <div class="actions">
+      <a href="/" class="btn btn-primary">Analyze Another Borrower</a>
+      <a href="javascript:window.print()" class="btn btn-secondary">Export Report</a>
+    </div>
+
+  </main>
+
+  <footer>
+    Loan Default Risk Analyzer &nbsp;|&nbsp; ML-powered credit risk assessment
+  </footer>
+
+  <script>
+    // Animate probability bar on load
+    const targetPct = {{ pct }};
+    const bar   = document.getElementById("probBar");
+    const label = document.getElementById("probValue");
+
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        bar.style.width = targetPct + "%";
+      }, 300);
+
+      // Count-up animation
+      let current = 0;
+      const step = targetPct / 60;
+      const interval = setInterval(() => {
+        current = Math.min(current + step, targetPct);
+        label.textContent = current.toFixed(1) + "%";
+        if (current >= targetPct) clearInterval(interval);
+      }, 16);
+    });
+  </script>
+
+</body>
+</html>

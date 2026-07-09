@@ -1,0 +1,37 @@
+{
+  "best_model": "Random Forest",
+  "results": {
+    "Logistic Regression": {
+      "best_params": {
+        "C": 0.1,
+        "penalty": "l2",
+        "solver": "lbfgs"
+      },
+      "cv_roc_auc": 0.7782
+    },
+    "Decision Tree": {
+      "best_params": {
+        "max_depth": null,
+        "min_samples_leaf": 10
+      },
+      "cv_roc_auc": 0.9238
+    },
+    "Random Forest": {
+      "best_params": {
+        "max_depth": null,
+        "max_features": "sqrt",
+        "n_estimators": 200
+      },
+      "cv_roc_auc": 0.9904
+    },
+    "XGBoost": {
+      "best_params": {
+        "learning_rate": 0.1,
+        "max_depth": 6,
+        "n_estimators": 100,
+        "subsample": 0.8
+      },
+      "cv_roc_auc": 0.9773
+    }
+  }
+}
